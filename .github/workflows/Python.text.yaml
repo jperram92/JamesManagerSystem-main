@@ -34,14 +34,15 @@ jobs:
     - name: Create test database
       run: |
         python -c "import sqlite3; conn = sqlite3.connect('crm_test.db'); conn.close()"
-        
-        - name: Run tests with detailed output
-        run: |
-          echo "=================== Running Tests ==================="
-          $env:DATABASE_PATH = "crm_test.db"  # Point to the test database
-          python -m pytest tests/ -vv --cov=pages --cov-report=term-missing --cov-report=xml --junitxml=test-results.xml --disable-warnings
-      
 
+    - name: Run tests with detailed output
+      run: |
+        echo "=================== Running Tests ==================="
+        $env:DATABASE_PATH = "crm_test.db"  # Point to the test database
+        python -m pytest tests/ -vv --cov=pages --cov-report=term-missing --cov-report=xml --junitxml=test-results.xml --disable-warnings
+
+    - name: Process test results
+      run: |
         if (Test-Path "test-results.xml") {
             echo "`n================= Test Summary ==================="
             $xml = [xml](Get-Content "test-results.xml")
