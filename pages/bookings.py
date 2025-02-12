@@ -1,170 +1,251 @@
 import streamlit as st
-import sqlite3
-import pandas as pd
-from datetime import datetime
-import os
-from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+from streamlit_calendar import calendar
 
-# Function to connect to the database
-def get_db_connection():
-    db_path = os.getenv('DATABASE_PATH', 'crm.db')
-    db_path = os.path.abspath(db_path)
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    conn.execute('PRAGMA foreign_keys = ON')  # Enable foreign keys
-    return conn
+st.set_page_config(page_title="Demo for streamlit-calendar", page_icon="📆")
 
-# Function to create a new booking
-def create_booking(contact_id, line_item_id, booking_date, service_details):
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(''' 
-            INSERT INTO bookings (budget_line_item_id, service_name, booked_amount, date_booked)
-            VALUES (?, ?, ?, ?)
-        ''', (line_item_id, service_details, 0.00, booking_date))  # Booked amount is assumed to be 0.00 or needs proper calculation
-        conn.commit()
-        conn.close()
-        st.success("Booking created successfully!")
-    except sqlite3.Error as e:
-        st.error(f"Error creating booking: {e}")
+mode = st.selectbox(
+    "Calendar Mode:",
+    (
+        "daygrid",
+        "timegrid",
+        "timeline",
+        "resource-daygrid",
+        "resource-timegrid",
+        "resource-timeline",
+        "list",
+        "multimonth",
+    ),
+)
 
-# Function to get all contacts
-def get_contacts():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(''' 
-        SELECT * FROM contacts
-    ''')
-    contacts = cursor.fetchall()
-    conn.close()
-    return contacts
+events = [
+    {
+        "title": "Event 1",
+        "color": "#FF6C6C",
+        "start": "2023-07-03",
+        "end": "2023-07-05",
+        "resourceId": "a",
+    },
+    {
+        "title": "Event 2",
+        "color": "#FFBD45",
+        "start": "2023-07-01",
+        "end": "2023-07-10",
+        "resourceId": "b",
+    },
+    {
+        "title": "Event 3",
+        "color": "#FF4B4B",
+        "start": "2023-07-20",
+        "end": "2023-07-20",
+        "resourceId": "c",
+    },
+    {
+        "title": "Event 4",
+        "color": "#FF6C6C",
+        "start": "2023-07-23",
+        "end": "2023-07-25",
+        "resourceId": "d",
+    },
+    {
+        "title": "Event 5",
+        "color": "#FFBD45",
+        "start": "2023-07-29",
+        "end": "2023-07-30",
+        "resourceId": "e",
+    },
+    {
+        "title": "Event 6",
+        "color": "#FF4B4B",
+        "start": "2023-07-28",
+        "end": "2023-07-20",
+        "resourceId": "f",
+    },
+    {
+        "title": "Event 7",
+        "color": "#FF4B4B",
+        "start": "2023-07-01T08:30:00",
+        "end": "2023-07-01T10:30:00",
+        "resourceId": "a",
+    },
+    {
+        "title": "Event 8",
+        "color": "#3D9DF3",
+        "start": "2023-07-01T07:30:00",
+        "end": "2023-07-01T10:30:00",
+        "resourceId": "b",
+    },
+    {
+        "title": "Event 9",
+        "color": "#3DD56D",
+        "start": "2023-07-02T10:40:00",
+        "end": "2023-07-02T12:30:00",
+        "resourceId": "c",
+    },
+    {
+        "title": "Event 10",
+        "color": "#FF4B4B",
+        "start": "2023-07-15T08:30:00",
+        "end": "2023-07-15T10:30:00",
+        "resourceId": "d",
+    },
+    {
+        "title": "Event 11",
+        "color": "#3DD56D",
+        "start": "2023-07-15T07:30:00",
+        "end": "2023-07-15T10:30:00",
+        "resourceId": "e",
+    },
+    {
+        "title": "Event 12",
+        "color": "#3D9DF3",
+        "start": "2023-07-21T10:40:00",
+        "end": "2023-07-21T12:30:00",
+        "resourceId": "f",
+    },
+    {
+        "title": "Event 13",
+        "color": "#FF4B4B",
+        "start": "2023-07-17T08:30:00",
+        "end": "2023-07-17T10:30:00",
+        "resourceId": "a",
+    },
+    {
+        "title": "Event 14",
+        "color": "#3D9DF3",
+        "start": "2023-07-17T09:30:00",
+        "end": "2023-07-17T11:30:00",
+        "resourceId": "b",
+    },
+    {
+        "title": "Event 15",
+        "color": "#3DD56D",
+        "start": "2023-07-17T10:30:00",
+        "end": "2023-07-17T12:30:00",
+        "resourceId": "c",
+    },
+    {
+        "title": "Event 16",
+        "color": "#FF6C6C",
+        "start": "2023-07-17T13:30:00",
+        "end": "2023-07-17T14:30:00",
+        "resourceId": "d",
+    },
+    {
+        "title": "Event 17",
+        "color": "#FFBD45",
+        "start": "2023-07-17T15:30:00",
+        "end": "2023-07-17T16:30:00",
+        "resourceId": "e",
+    },
+]
+calendar_resources = [
+    {"id": "a", "building": "Building A", "title": "Room A"},
+    {"id": "b", "building": "Building A", "title": "Room B"},
+    {"id": "c", "building": "Building B", "title": "Room C"},
+    {"id": "d", "building": "Building B", "title": "Room D"},
+    {"id": "e", "building": "Building C", "title": "Room E"},
+    {"id": "f", "building": "Building C", "title": "Room F"},
+]
 
-# Function to get valid budgets for a contact
-def get_valid_budgets_for_contact(contact_id):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(''' 
-        SELECT id, contact_id, budget_name, total_budget, current_spent, 
-               (total_budget - current_spent) AS remaining_budget, start_date, end_date, currency, status
-        FROM budgets 
-        WHERE contact_id = ? AND status = 'Active'
-    ''', (contact_id,))  # Removed the end_date filter
-    budgets = cursor.fetchall()
-    conn.close()
-    return budgets
+calendar_options = {
+    "editable": "true",
+    "navLinks": "true",
+    "resources": calendar_resources,
+    "selectable": "true",
+}
 
-# Function to get budget line items for a budget
-def get_budget_line_items(budget_id):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(''' 
-        SELECT id, contact_id, budget_name, total_budget, current_spent, 
-               (total_budget - current_spent) AS remaining_budget, start_date, end_date, currency, status
-        FROM budgets 
-        WHERE contact_id = ? AND status = 'Active'
-    ''', (budget_id,))
-    line_items = cursor.fetchall()
-    conn.close()
-    return line_items
-
-
-# Function to get bookings for a contact
-def get_bookings_for_contact(contact_id):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(''' 
-        SELECT b.id, b.service_name, b.booked_amount, b.date_booked, b.status, 
-               li.line_item_name, bu.budget_name
-        FROM bookings b
-        JOIN budget_line_items li ON b.budget_line_item_id = li.id
-        JOIN budgets bu ON li.budget_id = bu.id
-        WHERE b.contact_id = ?
-    ''', (contact_id,))
-    bookings = cursor.fetchall()
-    conn.close()
-    return bookings
-
-# Streamlit UI for booking management
-st.title("Booking Management")
-
-# Select contact by name
-contacts = get_contacts()
-contact_names = [f"{contact['name']} ({contact['email']})" for contact in contacts]
-contact_selection = st.selectbox("Select a Contact by Name", contact_names)
-
-# Get selected contact_id from selected contact name
-contact_id = None
-for contact in contacts:
-    if f"{contact['name']} ({contact['email']})" == contact_selection:
-        contact_id = contact['id']
-        st.write(f"Selected Contact ID: {contact_id}")  # Debugging line
-        break
-
-# Display existing budgets for the selected contact
-if contact_id:
-    budgets = get_valid_budgets_for_contact(contact_id)
-    st.write(f"Budgets for contact: {budgets}")  # Debugging line
-    if budgets:
-        st.subheader(f"Active Budgets for Contact: {contact_selection}")
-
-        # Create a dataframe to display budgets
-        budgets_df = pd.DataFrame(budgets)
-
-        # Ensure correct column mapping
-        column_mapping = {
-            0: 'id',
-            1: 'contact_id',
-            2: 'budget_name',
-            3: 'total_budget',
-            4: 'current_spent',
-            5: 'remaining_budget',
-            6: 'start_date',
-            7: 'end_date',
-            8: 'currency',
-            9: 'status'
+if "resource" in mode:
+    if mode == "resource-daygrid":
+        calendar_options = {
+            **calendar_options,
+            "initialDate": "2023-07-01",
+            "initialView": "resourceDayGridDay",
+            "resourceGroupField": "building",
         }
-        budgets_df.rename(columns=column_mapping, inplace=True)
-
-        # Display the dataframe
-        st.dataframe(budgets_df)
-
-        # Handle budget selection
-        selected_budget = st.selectbox("Select Budget", budgets_df['budget_name'].tolist())
-        selected_budget_id = budgets_df.loc[budgets_df['budget_name'] == selected_budget, 'id'].values[0]
-
-        # Get associated line items for the selected budget
-        line_items = get_budget_line_items(selected_budget_id)
-
-        # Add this debug line to see the line items
-        st.write("Line items for this budget:", line_items)
-
-        if line_items:
-            line_item_names = [line_item['line_item_name'] for line_item in line_items]
-            selected_line_item = st.selectbox("Select Line Item", line_item_names)
-
-            # Get selected line_item_id
-            selected_line_item_id = None
-            for line_item in line_items:
-                if line_item['line_item_name'] == selected_line_item:
-                    selected_line_item_id = line_item['id']
-                    break
-
-            # Select booking date
-            booking_date = st.date_input("Select Booking Date", min_value=datetime.now())
-
-            # Select service details
-            service_details = st.text_area("Enter Service Details")
-
-            # Create booking button
-            if st.button("Create Booking"):
-                create_booking(contact_id, selected_line_item_id, booking_date, service_details)
-        else:
-            st.write("No line items found for this budget.")
-    else:
-        st.write("No active budgets found for this contact.")
+    elif mode == "resource-timeline":
+        calendar_options = {
+            **calendar_options,
+            "headerToolbar": {
+                "left": "today prev,next",
+                "center": "title",
+                "right": "resourceTimelineDay,resourceTimelineWeek,resourceTimelineMonth",
+            },
+            "initialDate": "2023-07-01",
+            "initialView": "resourceTimelineDay",
+            "resourceGroupField": "building",
+        }
+    elif mode == "resource-timegrid":
+        calendar_options = {
+            **calendar_options,
+            "initialDate": "2023-07-01",
+            "initialView": "resourceTimeGridDay",
+            "resourceGroupField": "building",
+        }
 else:
-    st.write("Please select a contact to view their budgets.")
+    if mode == "daygrid":
+        calendar_options = {
+            **calendar_options,
+            "headerToolbar": {
+                "left": "today prev,next",
+                "center": "title",
+                "right": "dayGridDay,dayGridWeek,dayGridMonth",
+            },
+            "initialDate": "2023-07-01",
+            "initialView": "dayGridMonth",
+        }
+    elif mode == "timegrid":
+        calendar_options = {
+            **calendar_options,
+            "initialView": "timeGridWeek",
+        }
+    elif mode == "timeline":
+        calendar_options = {
+            **calendar_options,
+            "headerToolbar": {
+                "left": "today prev,next",
+                "center": "title",
+                "right": "timelineDay,timelineWeek,timelineMonth",
+            },
+            "initialDate": "2023-07-01",
+            "initialView": "timelineMonth",
+        }
+    elif mode == "list":
+        calendar_options = {
+            **calendar_options,
+            "initialDate": "2023-07-01",
+            "initialView": "listMonth",
+        }
+    elif mode == "multimonth":
+        calendar_options = {
+            **calendar_options,
+            "initialView": "multiMonthYear",
+        }
+
+state = calendar(
+    events=st.session_state.get("events", events),
+    options=calendar_options,
+    custom_css="""
+    .fc-event-past {
+        opacity: 0.8;
+    }
+    .fc-event-time {
+        font-style: italic;
+    }
+    .fc-event-title {
+        font-weight: 700;
+    }
+    .fc-toolbar-title {
+        font-size: 2rem;
+    }
+    """,
+    key=mode,
+)
+
+if state.get("eventsSet") is not None:
+    st.session_state["events"] = state["eventsSet"]
+
+st.write(state)
+
+st.markdown("## API reference")
+st.help(calendar)
