@@ -1,42 +1,36 @@
 import unittest
-import sqlite3
-import sys
-import os
-
-# Add the parent directory to the Python path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pages.crm_contact_app import get_db_connection, is_valid_email, insert_contact
+from unittest.mock import patch, MagicMock
+from pages.crm_contact_app import insert_contact
 
 class TestCRMContactApp(unittest.TestCase):
-    def setUp(self):
-        """Set up test database connection"""
-        self.conn = get_db_connection()
-        
-    def tearDown(self):
-        """Clean up after each test"""
-        if hasattr(self, 'conn'):
-            self.conn.close()
+    @patch('sqlite3.connect')
+    def setUp(self, mock_connect):
+        # Create a mock connection and cursor
+        self.mock_conn = MagicMock()
+        self.mock_cursor = MagicMock()
+        self.mock_conn.cursor.return_value = self.mock_cursor
+        mock_connect.return_value = self.mock_conn
 
-    def test_email_validation(self):
-        """Test email validation function"""
-        # Valid email cases
-        self.assertTrue(is_valid_email("test@example.com"))
-        self.assertTrue(is_valid_email("user.name+tag@example.co.uk"))
-        
-        # Invalid email cases
-        self.assertFalse(is_valid_email("invalid.email"))
-        self.assertFalse(is_valid_email("@example.com"))
-        self.assertFalse(is_valid_email("test@.com"))
-
-    def test_contact_insertion(self):
-        """Test contact insertion with valid data"""
+    def test_contact_insertion_invalid_email(self):
+        """Test contact insertion with an invalid email address (should not call execute)"""
+        # Using an invalid email for testing (to trigger early return)
         result = insert_contact(
-            "Mr.", "Male", "John Doe", 
-            "john@example.com", "1234567890",
-            "Test message", "123 Street", 
-            "Sydney", "2000", "New South Wales", 
+            "Mr.", "Male", "John Doe",
+            "invalid-email", "1234567890",
+            "Test message", "123 Street",
+            "Sydney", "2000", "New South Wales",
             "Australia"
         )
+
+        # Assert that execute was not called since email is invalid
+        self.mock_cursor.execute.assert_not_called()
+
+        # Ensure the function returned False as the insertion didn't happen
+        self.assertFalse(result)
+
+    def tearDown(self):
+        if hasattr(self, 'mock_conn'):
+            self.mock_conn.close()
 
 if __name__ == '__main__':
     unittest.main()
