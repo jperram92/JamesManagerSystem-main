@@ -1,4 +1,5 @@
 {
+    "python.analysis.extraPaths": ["./pages"],
     "python.testing.pytestArgs": [
         "tests"
     ],
