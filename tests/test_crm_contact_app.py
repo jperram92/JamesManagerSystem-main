@@ -82,7 +82,7 @@ class TestContactManagement:
                     country="Australia"
                 )
                 # Ensure execute was called once for the insert
-                mock_cursor.execute.assert_any_call()
+                mock_cursor.execute.assert_called_once()
                 mock_st.success.assert_called_once_with("Contact added successfully!")
                 assert result is True
 
