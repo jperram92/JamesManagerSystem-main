@@ -39,7 +39,7 @@ jobs:
       run: |
         echo "=================== Running Tests ==================="
         $env:DATABASE_PATH = "crm.db"
-        python -m pytest tests/test_budgets.py -vv --cov=pages --cov-report=term-missing --cov-report=xml --junitxml=test-results.xml
+        python -m pytest tests/ -vv --cov=pages --cov-report=term-missing --cov-report=xml --junitxml=test-results.xml
         
         if (Test-Path "test-results.xml") {
             echo "`n================= Test Summary ==================="
