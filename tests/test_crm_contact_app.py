@@ -1,15 +1,35 @@
 import unittest
-from unittest.mock import patch, MagicMock
+import sqlite3
+import os
 from pages.crm_contact_app import insert_contact
 
 class TestCRMContactApp(unittest.TestCase):
-    @patch('sqlite3.connect')
-    def setUp(self, mock_connect):
-        # Create a mock connection and cursor
-        self.mock_conn = MagicMock()
-        self.mock_cursor = MagicMock()
-        self.mock_conn.cursor.return_value = self.mock_cursor
-        mock_connect.return_value = self.mock_conn
+
+    def setUp(self):
+        """Set up a real database for testing purposes."""
+        # Create a new test database before each test
+        self.db_name = 'crm_test.db'
+        self.conn = sqlite3.connect(self.db_name)
+        self.cursor = self.conn.cursor()
+
+        # Create the table schema for testing (adjust as needed)
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS contacts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT,
+                gender TEXT,
+                name TEXT,
+                email TEXT,
+                phone TEXT,
+                message TEXT,
+                address TEXT,
+                city TEXT,
+                postcode TEXT,
+                state TEXT,
+                country TEXT
+            )
+        ''')
+        self.conn.commit()
 
     def test_contact_insertion_valid(self):
         """Test contact insertion with a valid email address (should call execute)"""
