@@ -156,20 +156,24 @@ class TestContactManagement:
 
 
     def test_search_contact_by_name(self, mock_db: tuple[MagicMock, MagicMock]):
-        mock_conn, mock_cursor = mock_db
+        mock_cursor = mock_db[0]  # Directly use mock_cursor from the tuple
         # Simulated database data
         mock_data = [
             {"id": 1, "name": "John Doe", "email": "john@example.com"},
             {"id": 2, "name": "Jane Smith", "email": "jane@example.com"}
         ]
-        mock_cursor.fetchall.return_value = mock_data
+        mock_cursor.fetchall.return_value = mock_data  # Mocking the fetchall method
 
         # Perform the search by name
-        result = search_contact_by_name("John")
-        # Ensure that only 1 result is returned
-        assert len(result) == 46
+        result = search_contact_by_name("John Doe")
+        
+        # Ensure that only 1 result is returned (for John Doe)
+        assert len(result) == 1, f"Expected 1 result, got {len(result)}"
+        
         # Ensure the correct contact is returned
-        assert result[0]["name"] == "John Doe"
+        assert result[0]["name"] == "John Doe", f"Expected 'John Doe', got {result[0]['name']}"
+
+
 
 
     def test_display_contacts(self, mock_db: tuple[MagicMock, MagicMock]):
@@ -184,7 +188,7 @@ class TestContactManagement:
         # Perform the display operation
         result = display_contacts()
         # Ensure the correct number of contacts are returned
-        assert len(result) == 69
+        assert len(result) == 4
         # Ensure the correct contacts are displayed
         assert result[0]["name"] == "Jane Smith"
         assert result[1]["name"] == "Alex Taylor"

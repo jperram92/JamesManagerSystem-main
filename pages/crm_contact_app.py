@@ -5,15 +5,19 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import re
+import os
+print(f"Database Path: {os.path.abspath('crm.db')}")
 
 # Function to validate email using regex
 def is_valid_email(email):
     email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
     return re.match(email_regex, email) is not None
 
-# Function to connect to the database
 def get_db_connection():
-    conn = sqlite3.connect(r'C:\Users\james\OneDrive\Desktop\JamesManagerSystem\crm.db')
+    # Use absolute path to ensure the correct db file is used
+    db_path = os.path.join(os.path.dirname(__file__), '..', 'crm.db')  # Go up one level and find crm.db
+    print(f"Connecting to database at: {db_path}")  # Print the correct path for debugging
+    conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
 
