@@ -72,7 +72,7 @@ def login_form():
             if user:
                 st.session_state.user = user
                 st.success("Logged in successfully!")
-                st.experimental_rerun()
+                st.rerun()  # Changed from st.experimental_rerun()
             else:
                 st.error("Invalid email or password")
 
@@ -92,7 +92,8 @@ def register_form():
 
 def logout():
     st.session_state.clear()
-    st.experimental_rerun()
+    st.rerun()  # Changed from st.experimental_rerun()
+
 
 # Main app logic
 def main():
