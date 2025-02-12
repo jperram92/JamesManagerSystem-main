@@ -39,7 +39,7 @@ jobs:
       run: |
         echo "=================== Running Tests ==================="
         $env:DATABASE_PATH = "crm.db"  # Point to the test database
-        python -m pytest tests/test_budgets.py -vv --cov=pages --cov-report=term-missing --cov-report=xml --junitxml=test-results.xml --disable-warnings
+        python -m pytest tests/test_budgets.py tests/test_logins.py -vv --cov=pages --cov-report=term-missing --cov-report=xml --junitxml=test-results.xml --disable-warnings
         
     - name: Process test results
       run: |
