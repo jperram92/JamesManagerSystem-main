@@ -62,6 +62,55 @@ class TestCRMContactApp(unittest.TestCase):
 
         # Ensure the function returned False
         self.assertFalse(result)
+    
+    def test_contact_insertion_invalid_phone_number(self):
+        """Test contact insertion with an invalid phone number (should not call execute)"""
+        result = insert_contact(
+            "Mr.", "Male", "John Doe",
+            "john@example.com", "invalid-phone",
+            "Test message", "123 Street",
+            "Sydney", "2000", "New South Wales",
+            "Australia"
+        )
+
+        # Assert that execute was not called due to invalid phone number
+        self.mock_cursor.execute.assert_not_called()
+
+        # Ensure the function returned False
+        self.assertTrue(result)
+
+    def test_contact_insertion_missing_country(self):
+        """Test contact insertion missing country (should call execute and insert empty country)"""
+        result = insert_contact(
+            "Mr.", "Male", "John Doe",
+            "john@example.com", "1234567890",
+            "Test message", "123 Street",
+            "Sydney", "2000", "New South Wales",
+            ""
+        )
+
+        # Assert that execute was called with empty country value
+        self.mock_cursor.execute.assert_called_once()
+
+        # Ensure the function returned True (as the insert would still happen)
+        self.assertTrue(result)
+
+        # Verify that commit was called on the connection
+        self.mock_conn.commit.assert_called_once()
+
+    def test_contact_insertion_all_fields_empty(self):
+        """Test contact insertion with all fields empty (should not insert anything)"""
+        result = insert_contact(
+            "", "", "",  # All fields empty
+            "", "", "",
+            "", "", "", ""
+        )
+
+        # Assert that execute was not called
+        self.mock_cursor.execute.assert_not_called()
+
+        # Ensure the function returned False
+        self.assertFalse(result)
 
     def tearDown(self):
         if hasattr(self, 'mock_conn'):
