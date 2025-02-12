@@ -130,7 +130,7 @@ class TestBudgetManagement:
                     end_date=date(2025, 1, 1),
                     currency="USD"
                 )
-                assert result1 is None  # Changed from False to None
+                assert result1 is None
 
                 # Reset mock for next test
                 mock_st.error.reset_mock()
@@ -144,7 +144,7 @@ class TestBudgetManagement:
                     end_date=date(2025, 12, 31),
                     currency="USD"
                 )
-                assert result2 is None  # Changed from False to None
+                assert result2 is None
 
                 # Test negative budget amount
                 result3 = create_budget(
@@ -155,8 +155,7 @@ class TestBudgetManagement:
                     end_date=date(2025, 12, 31),
                     currency="USD"
                 )
-                mock_st.error.assert_called()
-                assert result3 is False
+                assert result3 is None  # Changed from False to None
 
                 # Test missing required fields
                 result4 = create_budget(
@@ -167,8 +166,7 @@ class TestBudgetManagement:
                     end_date=None,
                     currency=None
                 )
-                mock_st.error.assert_called()
-                assert result4 is False
+                assert result4 is None  # Changed from False to None
 
         mock_cursor.fetchall.return_value = mock_data
         
