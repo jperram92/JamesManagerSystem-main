@@ -124,8 +124,7 @@ CREATE TABLE IF NOT EXISTS expenses (
 )
 ''')
 
-# Create bookings table to handle service utilization from budget line items
-cursor.execute('''
+cursor.execute(''' 
 CREATE TABLE IF NOT EXISTS bookings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     budget_line_item_id INTEGER,

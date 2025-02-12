@@ -17,6 +17,21 @@ def get_db_connection():
     conn.execute('PRAGMA foreign_keys = ON')  # Enable foreign keys
     return conn
 
+# Function to create a new booking
+def create_booking(contact_id, line_item_id, booking_date, service_details):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(''' 
+            INSERT INTO bookings (budget_line_item_id, service_name, booked_amount, date_booked)
+            VALUES (?, ?, ?, ?)
+        ''', (line_item_id, service_details, 0.00, booking_date))  # Booked amount is assumed to be 0.00 or needs proper calculation
+        conn.commit()
+        conn.close()
+        st.success("Booking created successfully!")
+    except sqlite3.Error as e:
+        st.error(f"Error creating booking: {e}")
+
 # Function to get all contacts
 def get_contacts():
     conn = get_db_connection()
@@ -36,8 +51,8 @@ def get_valid_budgets_for_contact(contact_id):
         SELECT id, contact_id, budget_name, total_budget, current_spent, 
                (total_budget - current_spent) AS remaining_budget, start_date, end_date, currency, status
         FROM budgets 
-        WHERE contact_id = ? AND status = 'active' AND end_date >= ?
-    ''', (contact_id, datetime.now().date()))
+        WHERE contact_id = ? AND status = 'Active'
+    ''', (contact_id,))  # Removed the end_date filter
     budgets = cursor.fetchall()
     conn.close()
     return budgets
@@ -47,29 +62,17 @@ def get_budget_line_items(budget_id):
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(''' 
-        SELECT id, budget_id, line_item_name, allocated_amount, 
-               (allocated_amount - spent_amount) AS remaining_amount, status
-        FROM budget_line_items WHERE budget_id = ?
+        SELECT id, contact_id, budget_name, total_budget, current_spent, 
+               (total_budget - current_spent) AS remaining_budget, start_date, end_date, currency, status
+        FROM budgets 
+        WHERE contact_id = ? AND status = 'Active'
     ''', (budget_id,))
     line_items = cursor.fetchall()
     conn.close()
     return line_items
 
-# Function to create a new booking
-def create_booking(contact_id, line_item_id, booking_date, service_details):
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(''' 
-            INSERT INTO bookings (contact_id, line_item_id, booking_date, service_details)
-            VALUES (?, ?, ?, ?)
-        ''', (contact_id, line_item_id, booking_date, service_details))
-        conn.commit()
-        conn.close()
-        st.success("Booking created successfully!")
-    except sqlite3.Error as e:
-        st.error(f"Error creating booking: {e}")
 
+# Function to get bookings for a contact
 def get_bookings_for_contact(contact_id):
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -98,19 +101,18 @@ contact_id = None
 for contact in contacts:
     if f"{contact['name']} ({contact['email']})" == contact_selection:
         contact_id = contact['id']
+        st.write(f"Selected Contact ID: {contact_id}")  # Debugging line
         break
 
 # Display existing budgets for the selected contact
 if contact_id:
     budgets = get_valid_budgets_for_contact(contact_id)
+    st.write(f"Budgets for contact: {budgets}")  # Debugging line
     if budgets:
         st.subheader(f"Active Budgets for Contact: {contact_selection}")
 
         # Create a dataframe to display budgets
         budgets_df = pd.DataFrame(budgets)
-
-        # Debugging step: Check if "status" is available in columns
-        # st.write("Debug: Available columns", budgets_df.columns)
 
         # Ensure correct column mapping
         column_mapping = {
@@ -123,18 +125,11 @@ if contact_id:
             6: 'start_date',
             7: 'end_date',
             8: 'currency',
-            9: 'status'  # Ensure "status" is here
+            9: 'status'
         }
-
-        # Ensure correct column names in DataFrame
         budgets_df.rename(columns=column_mapping, inplace=True)
 
         # Display the dataframe
-        display_columns = ['id', 'budget_name', 'total_budget', 'current_spent', 
-                           'start_date', 'end_date', 'currency', 'status']
-        budgets_df = budgets_df[display_columns]
-
-        # Display the dataframe in the UI
         st.dataframe(budgets_df)
 
         # Handle budget selection
@@ -143,6 +138,9 @@ if contact_id:
 
         # Get associated line items for the selected budget
         line_items = get_budget_line_items(selected_budget_id)
+
+        # Add this debug line to see the line items
+        st.write("Line items for this budget:", line_items)
 
         if line_items:
             line_item_names = [line_item['line_item_name'] for line_item in line_items]
