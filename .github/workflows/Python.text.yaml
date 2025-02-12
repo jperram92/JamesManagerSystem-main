@@ -33,7 +33,7 @@ jobs:
 
     - name: Create test database
       run: |
-        python -c "import sqlite3; conn = sqlite3.connect('crm_test.db'); conn.close()"
+        python -c "import sqlite3; conn = sqlite3.connect('crm.db'); conn.close()"
 
     - name: Run tests with detailed output
       run: |
