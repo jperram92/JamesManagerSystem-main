@@ -1,5 +1,6 @@
 import sqlite3
 from datetime import datetime, date
+import bcrypt
 
 # Create a connection to the SQLite database
 conn = sqlite3.connect('crm.db')
@@ -13,6 +14,7 @@ cursor.execute('DROP TABLE IF EXISTS contacts')
 cursor.execute('DROP TABLE IF EXISTS applications')
 cursor.execute('DROP TABLE IF EXISTS application_documents')
 cursor.execute('DROP TABLE IF EXISTS expenses')
+cursor.execute('DROP TABLE IF EXISTS users')
 
 # Create a table for storing contact information if it doesn't already exist
 cursor.execute(''' 
@@ -137,6 +139,16 @@ CREATE TABLE IF NOT EXISTS bookings (
 )
 ''')
 
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT UNIQUE,
+    name TEXT,
+    password TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+''')
+
 # Insert some sample (rubbish) data into the contacts table for testing
 cursor.executemany(''' 
 INSERT INTO contacts (title, gender, name, email, phone, message, address_line, suburb, postcode, state, country)
@@ -246,6 +258,20 @@ VALUES (?, ?, ?, ?)
     (1, 'Instagram Content', 3000.00, '2025-01-20'),
     (2, 'Blog Writing', 2000.00, '2025-01-25'),
     (3, 'Email Template Design', 1200.00, '2025-02-01'),
+])
+
+# Function to hash passwords using bcrypt
+def hash_password(password):
+    salt = bcrypt.gensalt()  # Generate salt
+    return bcrypt.hashpw(password.encode(), salt)  # Correct: encode the password to bytes before hashing
+
+# Insert some sample (rubbish) data into the users table with hashed passwords
+cursor.executemany(''' 
+INSERT INTO users (email, name, password)
+VALUES (?, ?, ?)
+''', [
+    ('user1@example.com', 'User One', hash_password('password123')),
+    ('user2@example.com', 'User Two', hash_password('mysecurepass'))
 ])
 
 # Commit changes and close connection
