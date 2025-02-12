@@ -124,6 +124,20 @@ CREATE TABLE IF NOT EXISTS expenses (
 )
 ''')
 
+# Create bookings table to handle service utilization from budget line items
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS bookings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    budget_line_item_id INTEGER,
+    service_name TEXT NOT NULL,
+    booked_amount DECIMAL(10, 2),
+    date_booked DATE,
+    status TEXT DEFAULT 'Booked',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (budget_line_item_id) REFERENCES budget_line_items(id)
+)
+''')
+
 # Insert some sample (rubbish) data into the contacts table for testing
 cursor.executemany(''' 
 INSERT INTO contacts (title, gender, name, email, phone, message, address_line, suburb, postcode, state, country)
@@ -222,6 +236,17 @@ VALUES (?, ?, ?, ?, ?, ?)
     (1, 2, 100.00, 5, '2025-01-20', 'January Instagram Content Creation'),
     (2, 3, 75.00, 10, '2025-01-25', 'Blog Posts - January Batch'),
     (3, 5, 120.00, 4, '2025-02-01', 'Email Template Design - Q1'),
+])
+
+# Insert sample bookings data
+cursor.executemany(''' 
+INSERT INTO bookings (budget_line_item_id, service_name, booked_amount, date_booked)
+VALUES (?, ?, ?, ?)
+''', [
+    (1, 'Facebook Ads Management', 5000.00, '2025-01-15'),
+    (1, 'Instagram Content', 3000.00, '2025-01-20'),
+    (2, 'Blog Writing', 2000.00, '2025-01-25'),
+    (3, 'Email Template Design', 1200.00, '2025-02-01'),
 ])
 
 # Commit changes and close connection

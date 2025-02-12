@@ -66,7 +66,7 @@ def update_budget(budget_id, budget_name=None, total_budget=None, start_date=Non
     values.append(budget_id)
 
     cursor.execute(f'''
-        UPDATE budgets SET {updates_str} WHERE id = ?
+        UPDATE budgets SET {updates_str} WHERE id = ? 
     ''', tuple(values))
     conn.commit()
     conn.close()
@@ -77,7 +77,9 @@ def get_budgets_for_contact(contact_id):
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(''' 
-        SELECT * FROM budgets WHERE contact_id = ?
+        SELECT id, contact_id, budget_name, total_budget, current_spent, 
+               (total_budget - current_spent) AS remaining_budget, start_date, end_date, currency, status
+        FROM budgets WHERE contact_id = ?
     ''', (contact_id,))
     budgets = cursor.fetchall()
     conn.close()
@@ -115,31 +117,32 @@ if contact_id:
         
         # Create a dataframe to display budgets
         budgets_df = pd.DataFrame(budgets)
-        
-        # First, let's check what columns we actually have
-        #st.write("Debug: Available columns", budgets_df.columns)
-        
-        # Update the columns based on what's actually in the database
+
+        # Debugging step: Check if "status" is available in columns
+        # st.write("Debug: Available columns", budgets_df.columns)
+
+        # Map the columns from DB to expected names
         column_mapping = {
             0: 'id',
             1: 'contact_id',
             2: 'budget_name',
             3: 'total_budget',
             4: 'current_spent',
-            5: 'start_date',
-            6: 'end_date',
-            7: 'currency',
-            8: 'status'
+            5: 'remaining_budget',
+            6: 'start_date',
+            7: 'end_date',
+            8: 'currency',
+            9: 'status'  # Ensure "status" is here
         }
         
         budgets_df.rename(columns=column_mapping, inplace=True)
         
         # Select only the columns we want to display
         display_columns = ['id', 'budget_name', 'total_budget', 'current_spent', 
-                         'start_date', 'end_date', 'currency', 'status']
+                           'start_date', 'end_date', 'currency', 'status']
         budgets_df = budgets_df[display_columns]
         
-        # Display the dataframe
+        # Display the dataframe in the UI
         st.dataframe(budgets_df)
     else:
         st.write("No budgets found for this contact.")
@@ -181,7 +184,7 @@ if contact_id:
                 update_submit = st.form_submit_button("Update Budget")
                 if update_submit and budget_id_to_update:
                     update_budget(budget_id_to_update, budget_name_to_update, total_budget_to_update, 
-                                start_date_to_update, end_date_to_update, currency_to_update)
+                                  start_date_to_update, end_date_to_update, currency_to_update)
 
     # Delete Budget Button
     with delete_col:

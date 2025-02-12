@@ -157,6 +157,7 @@ def home():
         # st.sidebar.page_link("pages/3_budgets.py", label="📊 Budgets")
         # st.sidebar.page_link("pages/4_crm_contact.py", label="👥 CRM Contacts")
         # st.sidebar.page_link("pages/5_document_generation.py", label="📄 Document Generation")
+        # st.sidebar.page_link("pages/6_bookings.py", label="📅 Bookings")
 
     # Main content
     with col2:
@@ -181,13 +182,6 @@ def home():
                 <p>Search contacts by name</p>
                 <p>Send personalized emails to clients</p>
                 <p>Maintain and organize customer data for better service</p>
-            </div>
-        """, unsafe_allow_html=True)
-
-        # Call to Action button
-        st.markdown(""" 
-            <div style="text-align:center;">
-                <a href="http://localhost:8501" class="button" style="color: white;">Manage Applications</a>
             </div>
         """, unsafe_allow_html=True)
 
