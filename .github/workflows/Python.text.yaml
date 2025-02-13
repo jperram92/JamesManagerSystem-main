@@ -9,11 +9,8 @@ on:
 
 jobs:
   test:
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-latest
     timeout-minutes: 10
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
     - name: Checkout repository
@@ -25,10 +22,19 @@ jobs:
         python-version: '3.12'
         cache: 'pip'
 
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt pytest pytest-cov
+      shell: pwsh
 
     - name: Create test database
       run: python -c "import sqlite3; conn = sqlite3.connect('crm.db'); conn.close()"
@@ -44,21 +50,8 @@ jobs:
 
     - name: Process test results
       if: always()
-      run: |
-        if [[ -f "test-results.xml" ]]; then
-          echo "`n================= Test Summary ==================="
-          TOTAL_TESTS=$(grep -o 'tests="[0-9]*"' test-results.xml | grep -o '[0-9]*')
-          FAILURES=$(grep -o 'failures="[0-9]*"' test-results.xml | grep -o '[0-9]*')
-          ERRORS=$(grep -o 'errors="[0-9]*"' test-results.xml | grep -o '[0-9]*')
-
-          echo "Total Tests: $TOTAL_TESTS"
-          echo "Failures: $FAILURES"
-          echo "Errors: $ERRORS"
-          
-          echo "`n================= Coverage Report ================"
-          coverage report
-        fi
-      shell: bash
+      run: python process_test_results.py
+      shell: python
 
     - name: Generate Coverage Badge
       if: always()
