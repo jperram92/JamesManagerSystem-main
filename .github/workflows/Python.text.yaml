@@ -2,61 +2,66 @@ name: Python Tests
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
   workflow_dispatch:
 
 jobs:
   test:
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 10
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-    - uses: actions/checkout@v4
-    
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.12'
         cache: 'pip'
-        
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        
-    - name: Create directories
-      run: |
-        if (-not (Test-Path "tests")) { New-Item -ItemType Directory -Path "tests" }
-        if (-not (Test-Path "pages")) { New-Item -ItemType Directory -Path "pages" }
+        pip install -r requirements.txt pytest pytest-cov
 
     - name: Create test database
-      run: |
-        python -c "import sqlite3; conn = sqlite3.connect('crm.db'); conn.close()"
+      run: python -c "import sqlite3; conn = sqlite3.connect('crm.db'); conn.close()"
+      env:
+        DATABASE_PATH: "crm.db"
 
-    - name: Run tests with detailed output
+    - name: Run tests with coverage
       run: |
         echo "=================== Running Tests ==================="
-        $env:DATABASE_PATH = "crm.db"  # Point to the test database
-        python -m pytest tests/test_budgets.py -vv --cov=pages --cov-report=term-missing --cov-report=xml --junitxml=test-results.xml --disable-warnings
-        
+        pytest tests/ -vv --cov=pages --cov-report=term-missing --cov-report=xml --junitxml=test-results.xml --disable-warnings
+      env:
+        DATABASE_PATH: "crm.db"
+
     - name: Process test results
+      if: always()
       run: |
-        if (Test-Path "test-results.xml") {
-            echo "`n================= Test Summary ==================="
-            $xml = [xml](Get-Content "test-results.xml")
-            Write-Host "Total Tests: $($xml.testsuites.tests)"
-            Write-Host "Failures: $($xml.testsuites.failures)"
-            Write-Host "Errors: $($xml.testsuites.errors)"
-            
-            echo "`n================= Coverage Report ================"
-            coverage report
-        }
-        
-      continue-on-error: true
+        if [[ -f "test-results.xml" ]]; then
+          echo "`n================= Test Summary ==================="
+          TOTAL_TESTS=$(grep -o 'tests="[0-9]*"' test-results.xml | grep -o '[0-9]*')
+          FAILURES=$(grep -o 'failures="[0-9]*"' test-results.xml | grep -o '[0-9]*')
+          ERRORS=$(grep -o 'errors="[0-9]*"' test-results.xml | grep -o '[0-9]*')
+
+          echo "Total Tests: $TOTAL_TESTS"
+          echo "Failures: $FAILURES"
+          echo "Errors: $ERRORS"
+          
+          echo "`n================= Coverage Report ================"
+          coverage report
+        fi
+      shell: bash
 
     - name: Generate Coverage Badge
+      if: always()
       uses: tj-actions/coverage-badge-py@v2
       with:
         output: coverage.svg

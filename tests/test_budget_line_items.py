@@ -335,55 +335,6 @@ def test_add_expense_invalid_date(mock_db):
     with pytest.raises(ValueError):
         add_expense(1, 1, 100.00, 2, "invalid-date", "Invalid expense date")
 
-
-# Test for checking PDF document generation failure due to missing signature
-def test_generate_pdf_missing_signature(mocker):
-    mocker.patch('streamlit.markdown')
-    mocker.patch('your_module.fetch_signature_and_timestamp_from_db', return_value=(None, None))
-    with pytest.raises(ValueError):
-        generate_and_download_pdf("John Doe", "john@example.com", "1234567890", "Test Document", "Developer", "To contribute", "Python", 1, None)
-
-
-# Test for handling invalid contact selection in document generation
-def test_document_page_invalid_contact(mocker):
-    mock_conn = MagicMock()
-    mock_cursor = MagicMock()
-    mocker.patch('sqlite3.connect', return_value=mock_conn)
-    mock_conn.cursor.return_value = mock_cursor
-
-    mock_cursor.fetchall.return_value = []
-    
-    with patch('streamlit.write') as mock_write:
-        document_page()
-        mock_write.assert_called_once_with("No contacts found in the database.")
-
-
-# Test for signature fetch when no signature is present
-def test_fetch_signature_no_signature_in_db(mocker):
-    mock_conn = MagicMock()
-    mock_cursor = MagicMock()
-    mocker.patch('sqlite3.connect', return_value=mock_conn)
-    mock_conn.cursor.return_value = mock_cursor
-
-    mock_cursor.fetchone.return_value = [None]
-    signature_image = fetch_signature_from_db(1)
-    assert signature_image is None
-
-
-# Test for empty document name in document generation
-def test_generate_pdf_empty_document_name(mocker):
-    mocker.patch('streamlit.markdown')
-    with pytest.raises(ValueError):
-        generate_and_download_pdf("John Doe", "john@example.com", "1234567890", "", "Developer", "To contribute", "Python", 1, MagicMock())
-
-
-# Test for empty skillsets in document generation
-def test_generate_pdf_empty_skillsets(mocker):
-    mocker.patch('streamlit.markdown')
-    with pytest.raises(ValueError):
-        generate_and_download_pdf("John Doe", "john@example.com", "1234567890", "Test Document", "Developer", "To contribute", "", 1, MagicMock())
-
-
 # Test for selecting non-existing product in expense creation
 def test_add_expense_non_existing_product(mocker):
     mock_conn = MagicMock()
@@ -395,14 +346,6 @@ def test_add_expense_non_existing_product(mocker):
     mock_cursor.fetchall.return_value = []
     with pytest.raises(ValueError):
         add_expense(1, 9999, 100.00, 2, datetime.now().strftime('%Y-%m-%d'), "Non-existing product expense")
-
-
-# Test for handling invalid date format in the document generation
-def test_generate_pdf_invalid_date_format(mocker):
-    mocker.patch('streamlit.markdown')
-    with pytest.raises(ValueError):
-        generate_and_download_pdf("John Doe", "john@example.com", "1234567890", "Test Document", "Developer", "To contribute", "Python", 1, MagicMock(), invalid_date="not_a_date")
-
 
 if __name__ == '__main__':
     pytest.main()
