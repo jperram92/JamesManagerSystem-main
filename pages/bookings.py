@@ -1,6 +1,9 @@
 import streamlit as st
 from streamlit_calendar import calendar
+import sqlite3
+from datetime import datetime
 
+# Set up the page configuration
 st.set_page_config(page_title="Customized Calendar Demo", page_icon="📅")
 
 # New font and color scheme
@@ -43,14 +46,33 @@ calendar_modes = [
 
 mode = st.selectbox("Select Calendar Mode:", calendar_modes)
 
-# Custom events with different start/end times and colors
-events = [
-    {"title": "Team Meeting", "color": "#F26D21", "start": "2023-09-12", "end": "2023-09-13", "resourceId": "room1"},
-    {"title": "Project Deadline", "color": "#22B8FF", "start": "2023-09-05", "end": "2023-09-05", "resourceId": "room2"},
-    {"title": "Client Call", "color": "#8E44AD", "start": "2023-09-20T09:30:00", "end": "2023-09-20T11:00:00", "resourceId": "room3"},
-    {"title": "Team Lunch", "color": "#FFB142", "start": "2023-09-15T12:00:00", "end": "2023-09-15T13:00:00", "resourceId": "room4"},
-    {"title": "Workshop", "color": "#30D158", "start": "2023-09-22T14:00:00", "end": "2023-09-22T16:00:00", "resourceId": "room5"},
-]
+# Connect to SQLite database and retrieve booking data
+conn = sqlite3.connect('crm.db')
+cursor = conn.cursor()
+
+# Fetch all bookings
+cursor.execute('''SELECT b.service_name, b.booked_amount, b.date_booked, l.line_item_name 
+                  FROM bookings b
+                  JOIN budget_line_items l ON b.budget_line_item_id = l.id
+                  WHERE b.status = 'Booked' AND b.date_booked >= ? 
+                  ORDER BY b.date_booked''', (datetime.now().strftime('%Y-%m-%d'),))
+
+bookings_data = cursor.fetchall()
+
+# Close the connection
+conn.close()
+
+# Map the fetched data into a format suitable for the calendar
+events = []
+for booking in bookings_data:
+    service_name, booked_amount, date_booked, line_item_name = booking
+    event = {
+        "title": f"{service_name} - {line_item_name}",
+        "color": "#4a90e2",  # Example color for the event
+        "start": date_booked,
+        "end": date_booked,  # You can adjust this based on the actual duration if needed
+    }
+    events.append(event)
 
 calendar_resources = [
     {"id": "room1", "building": "Main Office", "title": "Conference Room 1"},
@@ -67,59 +89,11 @@ calendar_options = {
     "selectable": "true",
 }
 
-# Adjust options based on the selected mode
-if "resource" in mode.lower():
-    if "resource day grid" in mode.lower():
-        calendar_options.update({
-            "initialDate": "2023-09-01",
-            "initialView": "resourceDayGridDay",
-            "resourceGroupField": "building",
-        })
-    elif "resource timeline" in mode.lower():
-        calendar_options.update({
-            "headerToolbar": {"left": "today prev,next", "center": "title", "right": "resourceTimelineDay,resourceTimelineWeek,resourceTimelineMonth"},
-            "initialDate": "2023-09-01",
-            "initialView": "resourceTimelineDay",
-            "resourceGroupField": "building",
-        })
-    elif "resource time grid" in mode.lower():
-        calendar_options.update({
-            "initialDate": "2023-09-01",
-            "initialView": "resourceTimeGridDay",
-            "resourceGroupField": "building",
-        })
-else:
-    if "day grid" in mode.lower():
-        calendar_options.update({
-            "headerToolbar": {"left": "today prev,next", "center": "title", "right": "dayGridDay,dayGridWeek,dayGridMonth"},
-            "initialDate": "2023-09-01",
-            "initialView": "dayGridMonth",
-        })
-    elif "time grid" in mode.lower():
-        calendar_options.update({
-            "initialView": "timeGridWeek",
-        })
-    elif "timeline" in mode.lower():
-        calendar_options.update({
-            "headerToolbar": {"left": "today prev,next", "center": "title", "right": "timelineDay,timelineWeek,timelineMonth"},
-            "initialDate": "2023-09-01",
-            "initialView": "timelineMonth",
-        })
-    elif "list" in mode.lower():
-        calendar_options.update({
-            "initialDate": "2023-09-01",
-            "initialView": "listMonth",
-        })
-    elif "multi month" in mode.lower():
-        calendar_options.update({
-            "initialView": "multiMonthYear",
-        })
-
 # Display the calendar with customized styles
 state = calendar(
-    events=st.session_state.get("events", events),
+    events=events,
     options=calendar_options,
-    custom_css="""
+    custom_css=""" 
     .fc-event-past {
         opacity: 0.7;
     }
@@ -133,6 +107,32 @@ state = calendar(
     """,
     key=mode,
 )
+
+# Handle booking form when user clicks on a date
+if state.get("dateSelected"):
+    selected_date = state["dateSelected"]
+    st.write(f"Selected Date: {selected_date}")
+
+    # Booking Form for new booking
+    with st.form(key="booking_form"):
+        service_name = st.text_input("Service Name")
+        line_item_id = st.selectbox("Line Item", [1, 2, 3, 4, 5])  # Example: Line items from your data
+        booked_amount = st.number_input("Booked Amount", min_value=0.00, step=0.01)
+        status = st.selectbox("Status", ["Booked", "Pending", "Cancelled"])
+
+        submit_button = st.form_submit_button("Submit Booking")
+
+        if submit_button:
+            # Insert the new booking into the database
+            conn = sqlite3.connect('crm.db')
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO bookings (budget_line_item_id, service_name, booked_amount, date_booked, status)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (line_item_id, service_name, booked_amount, selected_date, status))
+            conn.commit()
+            conn.close()
+            st.success(f"Booking for {service_name} on {selected_date} has been added successfully!")
 
 # Store the new events if they are modified
 if state.get("eventsSet") is not None:
